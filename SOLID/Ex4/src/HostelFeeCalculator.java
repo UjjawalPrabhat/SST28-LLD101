@@ -2,36 +2,31 @@ import java.util.*;
 
 public class HostelFeeCalculator {
     private final FakeBookingRepo repo;
+    private final Calculator calculator;
 
-    public HostelFeeCalculator(FakeBookingRepo repo) { this.repo = repo; }
+    public HostelFeeCalculator(FakeBookingRepo repo) {
+        this.repo = repo;
 
-    // OCP violation: switch + add-on branching + printing + persistence.
+        Map<AddOn, AddOnDetails> addOnMap = new HashMap<>();
+        addOnMap.put(AddOn.MESS, new MessAddOn());
+        addOnMap.put(AddOn.LAUNDRY, new LaundaryAddOn());
+        addOnMap.put(AddOn.GYM, new GymAddOn());
+
+        Map<Integer, RoomDetails> roomMap = new HashMap<>();
+        roomMap.put(LegacyRoomTypes.SINGLE, new SingleRoomDetails());
+        roomMap.put(LegacyRoomTypes.DOUBLE, new DoubleRoomDetails());
+        roomMap.put(LegacyRoomTypes.TRIPLE, new TripleRoomDetails());
+
+        this.calculator = new Calculator(addOnMap, roomMap);
+    }
+
     public void process(BookingRequest req) {
-        Money monthly = calculateMonthly(req);
+        Money monthly = calculator.calculateMonthly(req);
         Money deposit = new Money(5000.00);
 
         ReceiptPrinter.print(req, monthly, deposit);
 
-        String bookingId = "H-" + (7000 + new Random(1).nextInt(1000)); // deterministic-ish
+        String bookingId = BookingIdGenerator.genBookingId();
         repo.save(bookingId, req, monthly, deposit);
-    }
-
-    private Money calculateMonthly(BookingRequest req) {
-        double base;
-        switch (req.roomType) {
-            case LegacyRoomTypes.SINGLE -> base = 14000.0;
-            case LegacyRoomTypes.DOUBLE -> base = 15000.0;
-            case LegacyRoomTypes.TRIPLE -> base = 12000.0;
-            default -> base = 16000.0;
-        }
-
-        double add = 0.0;
-        for (AddOn a : req.addOns) {
-            if (a == AddOn.MESS) add += 1000.0;
-            else if (a == AddOn.LAUNDRY) add += 500.0;
-            else if (a == AddOn.GYM) add += 300.0;
-        }
-
-        return new Money(base + add);
     }
 }
