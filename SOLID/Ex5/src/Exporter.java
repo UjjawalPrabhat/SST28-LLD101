@@ -1,4 +1,14 @@
-public abstract class Exporter {
-    // implied "contract" but not enforced (smell)
-    public abstract ExportResult export(ExportRequest req);
+/**
+ * Exports the request to the specified format.
+ * 
+ * Preconditions: 
+ *   - req.body must not be null or empty
+ * 
+ * Postconditions:
+ *   - Returns ExportResult with non-null bytes
+ *   - If preconditions violated, [throws IllegalArgumentException]
+ */
+
+public interface Exporter {
+    public ExportResult export(ExportRequest req);
 }
